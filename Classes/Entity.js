@@ -51,6 +51,12 @@ export default class Cloud {
 		this.image = new ImageData(width, height)
 		const perlin = new Perlin({cell: 50})
 
+		const canvas = document.createElement('canvas')
+		canvas.width = width
+		canvas.height = height
+		this.ctx2 = canvas.getContext('2d')
+		document.body.appendChild(canvas)
+
 		{
 			for (let x = 0; x < width; x += 1) {
 				for (let y = 0; y < height; y += 1) {
@@ -59,6 +65,8 @@ export default class Cloud {
 				}
 			}
 		}
+
+		createImageBitmap(this.image).then(bitmap => this.bitmap = bitmap)
 	}
 
 	/**
@@ -73,7 +81,7 @@ export default class Cloud {
 		const xOrigin = this.image.width / 2
 		const yOrigin = this.image.height / 2
 
-		this.values = []
+		this.cress = []
 		for (let x = 0; x < width; x+=10) {
 			const pointA = getPoint(
 				this.image,
@@ -82,11 +90,43 @@ export default class Cloud {
 			)
 			const pointB = getPoint(
 				this.image,
-				Math.round(xOrigin + 300 * Math.cos(-time / 1000 + x / width * Math.PI * 2)),
-				Math.round(yOrigin + 300 * Math.sin(-time / 1000 + x / width * Math.PI * 2)),
+				Math.round(xOrigin + 20 * Math.cos(-time / 1500 + x / width * Math.PI * 2)),
+				Math.round(yOrigin + 20 * Math.sin(-time / 1500 + x / width * Math.PI * 2)),
+			)
+			const y = pointA[3] + pointB[3] / 1.5
+			this.cress.push(y)
+		}
+		
+		this.splat = []
+		for (let x = 0; x < width; x+=10) {
+			const pointA = getPoint(
+				this.image,
+				Math.round(xOrigin + 30 * Math.cos(time / 1000 + x / width * Math.PI * 2)),
+				Math.round(yOrigin + 30 * Math.sin(time / 1000 + x / width * Math.PI * 2)),
+			)
+			const pointB = getPoint(
+				this.image,
+				Math.round(xOrigin + 300 * Math.cos(-time / 1500 + x / width * Math.PI * 2)),
+				Math.round(yOrigin + 300 * Math.sin(-time / 1500 + x / width * Math.PI * 2)),
 			)
 			const y = pointA[3] + pointB[3] / 4
-			this.values.push(y)
+			this.splat.push(y)
+		}
+		
+		this.head = []
+		for (let x = 0; x < width; x+=10) {
+			const pointA = getPoint(
+				this.image,
+				Math.round(xOrigin - 50 + 30 * Math.cos(-time / 1000 + x / width * Math.PI * 2)),
+				Math.round(yOrigin + 50 + 30 * Math.sin(-time / 1000 + x / width * Math.PI * 2)),
+			)
+			const pointB = getPoint(
+				this.image,
+				Math.round(xOrigin - 50 + 30 * Math.cos(time / 1000 + x / width * Math.PI * 2)),
+				Math.round(yOrigin + 50 + 30 * Math.sin(time / 1000 + x / width * Math.PI * 2)),
+			)
+			const y = (pointA[3] + pointB[3] / 1.5) / 1.3
+			this.head.push(y)
 		}
 	}
 
@@ -95,22 +135,81 @@ export default class Cloud {
 	 * @param {Vector} mousePos
 	 */
 	draw(ctx, mousePos){
-		// ctx.putImageData(this.image, 0, 0)
 		const {width, height} = ctx.canvas
-		ctx.beginPath()
-		ctx.moveTo(
-			width / 2 + this.values[0] * Math.cos(0),
-			height / 2 + this.values[0] * Math.sin(0),
-		)
-		const fractionalAngle = Math.PI * 2 / this.values.length
-		for (let i = 1; i < this.values.length; i++) {
-			const value = this.values[i]
-			ctx.lineTo(
-				width / 2 + value * Math.cos(fractionalAngle * i),
-				height / 2 + value * Math.sin(fractionalAngle * i),
+		const cressPath = new Path2D()
+		{
+			cressPath.moveTo(
+				width / 2 + this.cress[0] * Math.cos(0),
+				height / 2 + this.cress[0] * Math.sin(0),
 			)
+			const fractionalAngle = Math.PI * 2 / this.cress.length
+			for (let i = 1; i < this.cress.length; i++) {
+				const value = this.cress[i]
+				cressPath.lineTo(
+					width / 2 + value * Math.cos(fractionalAngle * i),
+					height / 2 + value * Math.sin(fractionalAngle * i),
+				)
+			}
+			cressPath.closePath()
+			ctx.save()
+			ctx.filter = 'blur(10px)'
+			ctx.fill(cressPath)
+			ctx.filter = 'blur(0px)'
+			ctx.restore()
 		}
-		ctx.closePath()
-		ctx.stroke()
+		
+		{
+			ctx.beginPath()
+			ctx.moveTo(
+				width / 2 + this.splat[0] * Math.cos(0),
+				-200 + height / 2 + this.splat[0] * Math.sin(0),
+			)
+			const fractionalAngle = Math.PI * 2 / this.splat.length
+			for (let i = 1; i < this.splat.length; i++) {
+				const value = this.splat[i]
+				ctx.lineTo(
+					width / 2 + value * Math.cos(fractionalAngle * i),
+					-200 + height / 2 + value * Math.sin(fractionalAngle * i) * 0.5,
+				)
+			}
+			ctx.closePath()
+			ctx.save()
+			ctx.globalCompositeOperation = 'source-in'
+			ctx.fillStyle = '#000'
+			this.ctx2.filter = 'blur(2px)'
+			ctx.fill()
+			this.ctx2.filter = 'blur(0px)'
+			ctx.restore()
+		}
+		
+		{
+			const headPath = new Path2D()
+			headPath.moveTo(
+				width / 2 + this.head[0] * Math.cos(0),
+				-230 + height / 2 + this.head[0] * Math.sin(0),
+			)
+			const fractionalAngle = Math.PI * 2 / this.head.length
+			for (let i = 1; i < this.head.length; i++) {
+				const value = this.head[i]
+				headPath.lineTo(
+					width / 2 + value * Math.cos(fractionalAngle * i),
+					-200 + height / 2 + value * Math.sin(fractionalAngle * i),
+				)
+			}
+			headPath.closePath()
+			this.ctx2.clearRect(0, 0, width, height)
+			this.ctx2.filter = 'blur(10px)'
+			this.ctx2.fill(cressPath)
+			this.ctx2.filter = 'blur(0px)'
+			this.ctx2.save()
+			this.ctx2.globalCompositeOperation = 'source-out'
+			this.ctx2.fillStyle = '#222'
+			this.ctx2.filter = 'blur(5px)'
+			this.ctx2.fill(headPath)
+			this.ctx2.filter = 'blur(0px)'
+			this.ctx2.restore()
+			// const imageData = this.ctx2.getImageData(0, 0, width, height)
+			// ctx.putImageData(imageData, 0, 0)
+		}
 	}
 }
