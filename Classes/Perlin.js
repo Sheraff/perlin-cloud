@@ -1,14 +1,17 @@
 import PseudoRandomMatrix from "./PseudoRandomMatrix.js"
 import Vector from "./Vector.js"
 
+// wildly adapted from https://adrianb.io/2014/08/09/perlinnoise.html
+
 export default class Perlin {
 	matrix = new PseudoRandomMatrix(2)
 
 	constructor({ cell = 100 } = {}) {
 		this.cell = cell
+		return this.#noise.bind(this)
 	}
 
-	noise(x, y) {
+	#noise(x, y) {
 		// cell size
 		const xCell = x / this.cell
 		const yCell = y / this.cell

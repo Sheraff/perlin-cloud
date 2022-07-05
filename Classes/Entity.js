@@ -49,12 +49,12 @@ export default class Cloud {
 	constructor(ctx) {
 		const {width, height} = ctx.canvas
 		this.image = new ImageData(width, height)
-		this.perlin = new Perlin({cell: 50})
+		const perlin = new Perlin({cell: 50})
 
 		{
 			for (let x = 0; x < width; x += 1) {
 				for (let y = 0; y < height; y += 1) {
-					const value = this.perlin.noise(x, y)
+					const value = perlin(x, y)
 					setPoint(this.image, x, y, [255, 255, 255, value * 255])
 				}
 			}
