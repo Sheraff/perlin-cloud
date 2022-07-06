@@ -55,7 +55,7 @@ export default class Cloud {
 		canvas.width = width
 		canvas.height = height
 		this.ctx2 = canvas.getContext('2d')
-		document.body.appendChild(canvas)
+		// document.body.appendChild(canvas)
 
 		{
 			for (let x = 0; x < width; x += 1) {
@@ -81,7 +81,7 @@ export default class Cloud {
 		const xOrigin = this.image.width / 2
 		const yOrigin = this.image.height / 2
 
-		this.cress = []
+		this.mask = []
 		for (let x = 0; x < width; x+=10) {
 			const pointA = getPoint(
 				this.image,
@@ -94,10 +94,10 @@ export default class Cloud {
 				Math.round(yOrigin + 20 * Math.sin(-time / 1500 + x / width * Math.PI * 2)),
 			)
 			const y = pointA[3] + pointB[3] / 1.5
-			this.cress.push(y)
+			this.mask.push(y)
 		}
 		
-		this.splat = []
+		this.crest = []
 		for (let x = 0; x < width; x+=10) {
 			const pointA = getPoint(
 				this.image,
@@ -110,7 +110,7 @@ export default class Cloud {
 				Math.round(yOrigin + 300 * Math.sin(-time / 1500 + x / width * Math.PI * 2)),
 			)
 			const y = pointA[3] + pointB[3] / 4
-			this.splat.push(y)
+			this.crest.push(y)
 		}
 		
 		this.head = []
@@ -136,24 +136,24 @@ export default class Cloud {
 	 */
 	draw(ctx, mousePos){
 		const {width, height} = ctx.canvas
-		const cressPath = new Path2D()
+		const maskPath = new Path2D()
 		{
-			cressPath.moveTo(
-				width / 2 + this.cress[0] * Math.cos(0),
-				height / 2 + this.cress[0] * Math.sin(0),
+			maskPath.moveTo(
+				width / 2 + this.mask[0] * Math.cos(0),
+				height / 2 + this.mask[0] * Math.sin(0),
 			)
-			const fractionalAngle = Math.PI * 2 / this.cress.length
-			for (let i = 1; i < this.cress.length; i++) {
-				const value = this.cress[i]
-				cressPath.lineTo(
+			const fractionalAngle = Math.PI * 2 / this.mask.length
+			for (let i = 1; i < this.mask.length; i++) {
+				const value = this.mask[i]
+				maskPath.lineTo(
 					width / 2 + value * Math.cos(fractionalAngle * i),
 					height / 2 + value * Math.sin(fractionalAngle * i),
 				)
 			}
-			cressPath.closePath()
+			maskPath.closePath()
 			ctx.save()
 			ctx.filter = 'blur(10px)'
-			ctx.fill(cressPath)
+			ctx.fill(maskPath)
 			ctx.filter = 'blur(0px)'
 			ctx.restore()
 		}
@@ -161,12 +161,12 @@ export default class Cloud {
 		{
 			ctx.beginPath()
 			ctx.moveTo(
-				width / 2 + this.splat[0] * Math.cos(0),
-				-200 + height / 2 + this.splat[0] * Math.sin(0),
+				width / 2 + this.crest[0] * Math.cos(0),
+				-200 + height / 2 + this.crest[0] * Math.sin(0),
 			)
-			const fractionalAngle = Math.PI * 2 / this.splat.length
-			for (let i = 1; i < this.splat.length; i++) {
-				const value = this.splat[i]
+			const fractionalAngle = Math.PI * 2 / this.crest.length
+			for (let i = 1; i < this.crest.length; i++) {
+				const value = this.crest[i]
 				ctx.lineTo(
 					width / 2 + value * Math.cos(fractionalAngle * i),
 					-200 + height / 2 + value * Math.sin(fractionalAngle * i) * 0.5,
@@ -199,7 +199,7 @@ export default class Cloud {
 			headPath.closePath()
 			this.ctx2.clearRect(0, 0, width, height)
 			this.ctx2.filter = 'blur(10px)'
-			this.ctx2.fill(cressPath)
+			this.ctx2.fill(maskPath)
 			this.ctx2.filter = 'blur(0px)'
 			this.ctx2.save()
 			this.ctx2.globalCompositeOperation = 'source-out'
@@ -208,8 +208,7 @@ export default class Cloud {
 			this.ctx2.fill(headPath)
 			this.ctx2.filter = 'blur(0px)'
 			this.ctx2.restore()
-			// const imageData = this.ctx2.getImageData(0, 0, width, height)
-			// ctx.putImageData(imageData, 0, 0)
+			ctx.drawImage(this.ctx2.canvas, 0, 0)
 		}
 	}
 }
